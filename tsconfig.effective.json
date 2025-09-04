@@ -1,0 +1,94 @@
+{
+    "compilerOptions": {
+        "target": "es2017",
+        "lib": [
+            "dom",
+            "dom.iterable",
+            "esnext"
+        ],
+        "allowJs": true,
+        "skipLibCheck": true,
+        "strict": true,
+        "noEmit": true,
+        "esModuleInterop": true,
+        "module": "esnext",
+        "moduleResolution": "bundler",
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "jsx": "preserve",
+        "incremental": true,
+        "plugins": [
+            {
+                "name": "next"
+            }
+        ],
+        "baseUrl": "./",
+        "paths": {
+            "@/*": [
+                "./src/*"
+            ],
+            "@/lib/*": [
+                "./src/lib/*"
+            ],
+            "@/lib/cms": [
+                "./src/lib/cms/index.ts"
+            ]
+        },
+        "allowSyntheticDefaultImports": true,
+        "resolvePackageJsonExports": true,
+        "resolvePackageJsonImports": true,
+        "preserveConstEnums": true,
+        "noImplicitAny": true,
+        "noImplicitThis": true,
+        "strictNullChecks": true,
+        "strictFunctionTypes": true,
+        "strictBindCallApply": true,
+        "strictPropertyInitialization": true,
+        "strictBuiltinIteratorReturn": true,
+        "alwaysStrict": true,
+        "useUnknownInCatchVariables": true
+    },
+    "files": [
+        "./next-env.d.ts",
+        "./next.config.ts",
+        "./tailwind.config.ts",
+        "./src/app/api/revalidate/route.ts",
+        "./src/app/lib/models.ts",
+        "./src/app/lib/query.ts",
+        "./src/app/lib/utils.ts",
+        "./src/app/lib/cms/cms.ts",
+        "./src/app/lib/cms/index.ts",
+        "./src/app/lib/cms/types.ts",
+        "./src/app/lib/cms/providers/builder.ts",
+        "./src/app/lib/cms/providers/contentful.ts",
+        "./src/app/lib/cms/providers/mock.ts",
+        "./src/app/lib/cms/providers/prismic.ts",
+        "./src/app/lib/cms/providers/sanity.ts",
+        "./src/app/lib/cms/providers/storyblok.ts",
+        "./src/app/layout.tsx",
+        "./src/app/page.tsx",
+        "./src/app/(site)/blog/page.tsx",
+        "./src/app/(site)/pressroom/page.tsx",
+        "./src/app/preview/page.tsx",
+        "./src/components/ArticleCard.tsx",
+        "./src/components/AuthorChip.tsx",
+        "./src/components/Breadcrumbs.tsx",
+        "./src/components/ContentBlocks.tsx",
+        "./src/components/FiltersBar.tsx",
+        "./src/components/Hero.tsx",
+        "./src/components/NewsletterCta.tsx",
+        "./src/components/Pagination.tsx",
+        "./src/components/SectionHeader.tsx",
+        "./.next/types/routes.d.ts",
+        "./.next/types/validator.ts"
+    ],
+    "include": [
+        "next-env.d.ts",
+        "**/*.ts",
+        "**/*.tsx",
+        ".next/types/**/*.ts"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}
