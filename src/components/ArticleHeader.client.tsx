@@ -3,20 +3,25 @@
 import Image from "next/image";
 import AuthorChip from "@/components/AuthorChip";
 import { formatDate } from "@/lib/utils";
-import { useContentfulInspectorMode, useContentfulLiveUpdates } from "@contentful/live-preview/react";
+import {
+  useContentfulInspectorMode,
+  useContentfulLiveUpdates,
+} from "@contentful/live-preview/react";
 import type { Article } from "@/lib/models";
 
-// We accept both the mapped Article (for SSR) and the raw Contentful entry for live updates
+/** Live header: renders from SSR `article` but prefers fields from `rawEntry` during preview */
 export default function ArticleHeader({
   article,
   rawEntry,
 }: {
   article: Article;
-  rawEntry?: any;
+  rawEntry?: any; // Contentful raw entry (CPA/CDA response)
 }) {
+  // Live-updated raw entry while typing in Contentful (preview only)
   const updated = rawEntry ? useContentfulLiveUpdates(rawEntry) : null;
-  const f = updated?.fields; // live-updated fields when typing
+  const f = updated?.fields;
 
+  // Prefer live-updating fields; fallback to mapped article
   const title = f?.title ?? article.title;
   const shortDescription = f?.shortDescription ?? article.excerpt;
   const publishedDate = f?.publishedDate ?? article.publishedAt;
@@ -25,16 +30,20 @@ export default function ArticleHeader({
       ? "https:" + f.featuredImage.fields.file.url
       : article.hero?.url;
 
-  const inspector = useContentfulInspectorMode({
-    entryId: article.id,
-    locale: "en-US",
-  });
+  const entryId = rawEntry?.sys?.id ?? article.id;
+  const inspector = useContentfulInspectorMode({ entryId, locale: "en-US" });
 
   return (
     <header className="space-y-3">
       <h1 className="text-3xl md:text-4xl font-bold" {...inspector({ fieldId: "title" })}>
         {title}
       </h1>
+
+      {shortDescription && (
+        <p className="text-gray-600" {...inspector({ fieldId: "shortDescription" })}>
+          {shortDescription}
+        </p>
+      )}
 
       <div className="flex items-center justify-between text-sm text-gray-600">
         <div {...inspector({ fieldId: "author" })}>
@@ -58,12 +67,6 @@ export default function ArticleHeader({
             priority
           />
         </div>
-      )}
-
-      {shortDescription && (
-        <p className="text-gray-600" {...inspector({ fieldId: "shortDescription" })}>
-          {shortDescription}
-        </p>
       )}
     </header>
   );

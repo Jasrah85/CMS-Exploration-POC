@@ -8,6 +8,7 @@ export default function CFPreviewProvider({ children }: { children: React.ReactN
       locale="en-US"              // <-- required
       enableInspectorMode
       enableLiveUpdates
+      debugMode
       // optional but helpful:
       space={process.env.NEXT_PUBLIC_CONTENTFUL_SPACE_ID}
       environment={process.env.NEXT_PUBLIC_CONTENTFUL_ENV || "master"}

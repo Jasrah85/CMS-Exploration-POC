@@ -47,7 +47,7 @@ function mapEntryToArticle(entry: any): Article {
     slug: f.slug ?? "",
     title: f.title ?? f.internalName ?? "",
     excerpt: f.shortDescription ?? "",
-    body: richToPlain(f.content),
+    body: f.content ?? richToPlain(f.content),
     hero: heroFile
       ? {
           url: `https:${heroFile.url}`,
