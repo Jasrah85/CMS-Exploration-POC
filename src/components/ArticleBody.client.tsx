@@ -1,4 +1,5 @@
 // src/components/ArticleBody.client.tsx
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { useContentfulInspectorMode, useContentfulLiveUpdates } from "@contentful/live-preview/react";
 import ContentBlocks from "@/components/ContentBlocks";

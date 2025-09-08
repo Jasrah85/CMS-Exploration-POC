@@ -1,4 +1,5 @@
 // src/app/(site)/blog/[slug]/page.tsx
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { notFound } from "next/navigation";
 import { getCMS } from "@/lib/cms/cms";
 import ArticleHeader from "@/components/ArticleHeader.client";

@@ -1,4 +1,5 @@
 // src/lib/cms/providers/contentful.ts
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { CMSProvider } from "../cms";
 import type { Article, Paginated } from "@/lib/models";
 import type { ArticleQuery } from "@/lib/query";

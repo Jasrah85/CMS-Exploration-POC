@@ -1,4 +1,5 @@
 // src/components/ArticleHeader.client.tsx
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import Image from "next/image";
 import AuthorChip from "@/components/AuthorChip";

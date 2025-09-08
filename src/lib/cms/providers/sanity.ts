@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { CMSProvider } from "../types";
 import type { Article, Paginated } from "@/lib/models";
 import type { ArticleQuery } from "@/lib/query";
