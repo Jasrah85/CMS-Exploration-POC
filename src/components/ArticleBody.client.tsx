@@ -3,18 +3,14 @@
 import { useContentfulInspectorMode, useContentfulLiveUpdates } from "@contentful/live-preview/react";
 import ContentBlocks from "@/components/ContentBlocks";
 
-type Props = {
-  entryId: string;
-  body?: any;     // SSR body (Rich Text doc or string)
-  rawEntry?: any; // raw Contentful entry for live updates (optional)
-};
+type Props = { entryId: string; body?: unknown; rawEntry?: unknown };
 
 export default function ArticleBody({ entryId, body, rawEntry }: Props) {
-  const live = rawEntry ? useContentfulLiveUpdates(rawEntry) : null;
+  // ✅ always call the hook
+  const live = useContentfulLiveUpdates(rawEntry as any);
   const inspector = useContentfulInspectorMode({ entryId, locale: "en-US" });
 
-  // Prefer live-updating Rich Text from the raw entry; fallback to SSR body
-  const renderedBody = live?.fields?.content ?? body;
+  const renderedBody = (live as any)?.fields?.content ?? body;
 
   return (
     <div {...inspector({ fieldId: "content" })}>

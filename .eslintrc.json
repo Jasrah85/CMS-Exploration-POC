@@ -1,0 +1,18 @@
+{
+  "extends": ["next/core-web-vitals", "next/typescript"],
+  "overrides": [
+    {
+      "files": [
+        "src/lib/cms/providers/**/*",
+        "src/components/ContentBlocks.tsx",
+        "src/components/ArticleHeader.client.tsx",
+        "src/components/ArticleBody.client.tsx",
+        "src/app/(site)/**/page.tsx",
+        "src/lib/cms/types.ts"
+      ],
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "off"
+      }
+    }
+  ]
+}
