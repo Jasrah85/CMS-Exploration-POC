@@ -1,9 +1,12 @@
 // src/lib/cms/cms.ts
+import { cookies } from "next/headers";
 import type { CMSProvider } from "./types";
 export type { CMSProvider } from "./types";
 
-export async function getCMS(): Promise<CMSProvider> {
-  const provider = process.env.NEXT_PUBLIC_CMS ?? "mock";
+export async function getCMS(providerOverride?: string): Promise<CMSProvider> {
+  const bag = await cookies();
+  const cookieCMS = bag.get("cms")?.value;
+  const provider = providerOverride ?? cookieCMS ?? process.env.NEXT_PUBLIC_CMS ?? "mock";
 
   switch (provider) {
     case "contentful":
