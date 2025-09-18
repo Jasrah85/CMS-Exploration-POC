@@ -3,75 +3,132 @@ import type { CMSProvider } from "../types";
 import type { Article, Paginated } from "@/lib/models";
 import type { ArticleQuery } from "@/lib/query";
 import { defaults } from "@/lib/query";
+import { draftMode } from "next/headers";
+import { builder } from "@builder.io/sdk";
 
-// Using REST so you don’t need the SDK immediately
-const API = "https://cdn.builder.io/api/v3";
+const MODEL = process.env.NEXT_PUBLIC_BUILDER_ARTICLE_MODEL ?? "article";
 
-function mapBuilderItemToArticle(item: any): Article {
-  const data = item?.data ?? {};
-  const image = data?.heroImage ?? data?.image;
+builder.init(process.env.BUILDER_API_KEY!);
+
+function mapItemToArticle(item: any): Article {
+  const d = item?.data ?? {};
+  const hero = d.featuredImage?.url
+    ? { url: d.featuredImage.url, alt: d.featuredImage.altText }
+    : undefined;
+
   return {
     id: item?.id ?? crypto.randomUUID(),
-    slug: data?.slug ?? item?.name?.toLowerCase()?.replace(/\s+/g, "-") ?? "",
-    title: data?.title ?? item?.name ?? "",
-    excerpt: data?.excerpt,
-    hero: image ? { url: image, alt: data?.imageAlt } : undefined,
-    author: data?.author && { id: "author", name: data.author },
-    categories: (data?.categories ?? []).map((s: string) => ({ id: s, slug: s, title: s })),
-    tags: (data?.tags ?? []).map((s: string) => ({ id: s, slug: s, title: s })),
-    publishedAt: item?.published ?? item?.createdDate,
+    slug: d.slug ?? "",
+    title: d.title ?? "",
+    excerpt: d.shortDescription ?? "",
+    body: d.content ?? "",
+    hero,
+    author: d.author && {
+      id: d.author.id ?? "author",
+      name: d.author.name ?? "Author",
+      title: d.author.title,
+      avatar: d.author.avatar?.url ? { url: d.author.avatar.url, alt: d.author.avatar?.altText } : undefined,
+    },
+    categories: [],
+    tags: (Array.isArray(d.tags) ? d.tags : []).map((t: string) => ({ id: t, slug: t, title: t })),
+    publishedAt: d.publishedDate ?? item?.published ?? item?.firstPublished,
     updatedAt: item?.lastUpdated,
-    featured: Boolean(data?.featured),
+    featured: Boolean(d.featured),
+  };
+}
+
+async function getClientOptions() {
+  const { isEnabled } = await draftMode();
+  return {
+    options: {
+      includeRefs: true,
+      includeUnpublished: isEnabled, // show drafts in preview
+      cachebust: isEnabled,
+    } as any,
   };
 }
 
 export async function builderProvider(): Promise<CMSProvider> {
-  const apiKey = process.env.NEXT_PUBLIC_BUILDER_PUBLIC_KEY!;
-  const model = "article"; // align with your Builder model name
-
-  async function fetchBuilder(path: string, params: Record<string, any> = {}) {
-    const url = new URL(`${API}/${path}`);
-    url.searchParams.set("apiKey", apiKey);
-    Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, String(v)));
-    const res = await fetch(url.toString(), { next: { revalidate: 60 } });
-    if (!res.ok) throw new Error(`Builder request failed: ${res.status}`);
-    return res.json();
-  }
-
   return {
     async getArticles(query: ArticleQuery = {}): Promise<Paginated<Article>> {
       const q = { ...defaults, ...query };
-      const opts: any = { limit: q.pageSize, offset: (q.page - 1) * q.pageSize };
-      // Builder supports query filters via `query` param (JSON)
-      const filter: Record<string, any> = {};
-      if (q.search) filter["$or"] = [{ "data.title": { $regex: q.search, $options: "i" } }, { "data.excerpt": { $regex: q.search, $options: "i" } }];
-      if (q.tag) filter["data.tags.value"] = q.tag;
-      const order = q.sort === "oldest" ? "createdDate asc" : "createdDate desc";
+      const { options } = await getClientOptions();
 
-      const json = await fetchBuilder(`content/${model}`, { ...opts, query: JSON.stringify(filter), sort: order });
-      const items = (json?.results ?? []).map(mapBuilderItemToArticle);
-      const total = json?.count ?? items.length;
-      return { items, total, page: q.page, pageSize: q.pageSize };
+      const sort =
+        q.sort === "oldest" ? { "data.publishedDate": 1 } : { "data.publishedDate": -1 };
+
+      const filter: any = {};
+      if (q.tag) filter["data.tags.$in"] = [q.tag];
+      if (q.search) filter.$or = [
+        { "data.title.$regex": q.search, "data.title.$options": "i" },
+        { "data.shortDescription.$regex": q.search, "data.shortDescription.$options": "i" },
+      ];
+
+      const items = await builder.getAll(MODEL, {
+        ...options,
+        query: filter,
+        sort,
+        options: {
+          ...options.options,
+          limit: q.pageSize,
+          offset: (q.page - 1) * q.pageSize,
+        },
+      });
+
+      // total: Builder CDN doesn’t return total; for POC, derive from a light “count” call or estimate
+      // Here we do a simple extra fetch without limit for an approximate total (fine for small spaces).
+      const allForCount =
+        q.page === 1
+          ? await builder.getAll(MODEL, { ...options, query: filter, options: { ...options.options, limit: 200 } })
+          : [];
+
+      return {
+        items: items.map(mapItemToArticle),
+        total: allForCount.length || items.length,
+        page: q.page,
+        pageSize: q.pageSize,
+      };
     },
 
     async getArticleBySlug(slug: string) {
-      const json = await fetchBuilder(`content/${model}`, { query: JSON.stringify({ "data.slug": slug }), limit: 1 });
-      const doc = json?.results?.[0];
-      return doc ? mapBuilderItemToArticle(doc) : null;
+      const { options } = await getClientOptions();
+      const res = await builder.get(MODEL, {
+        ...options,
+        query: { "data.slug": slug },
+      });
+      return res ? mapItemToArticle(res) : null;
     },
 
     async getFeatured(limit = 6) {
-      const json = await fetchBuilder(`content/${model}`, { query: JSON.stringify({ "data.featured": true }), limit });
-      return (json?.results ?? []).map(mapBuilderItemToArticle);
+      const { options } = await getClientOptions();
+      const items = await builder.getAll(MODEL, {
+        ...options,
+        query: { "data.featured": true },
+        sort: { "data.publishedDate": -1 },
+        options: { ...options.options, limit },
+      });
+      return items.map(mapItemToArticle);
     },
 
-    async getCategories() { return []; },
-    async getTags() { return []; },
+    async getCategories() {
+      return [];
+    },
 
-    getRevalidatePathsForWebhook(payload: any) {
-      // Builder webhooks can include `model` and `data.slug`
-      const slug = payload?.data?.data?.slug ?? payload?.data?.slug;
-      return slug ? [`/blog/${slug}`, "/blog"] : ["/", "/blog", "/pressroom"];
+    async getTags() {
+      const { options } = await getClientOptions();
+      const items = await builder.getAll(MODEL, {
+        ...options,
+        options: { ...options.options, limit: 200 },
+        select: "data.tags",
+      } as any);
+      const set = new Set<string>();
+      for (const it of items as any[]) (Array.isArray(it?.data?.tags) ? it.data.tags : []).forEach((t: string) => set.add(t));
+      return Array.from(set).sort().map((t) => ({ id: t, slug: t, title: t }));
+    },
+
+    // not used by Builder in this POC
+    getRevalidatePathsForWebhook() {
+      return ["/blog"];
     },
   };
 }
