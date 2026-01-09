@@ -15,7 +15,7 @@
     "@prismicio/client": "^7.20.1",
     "@sanity/client": "^7.10.0",
     "contentful": "^11.7.15",
-    "next": "15.5.2",
+    "next": "15.5.9",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "storyblok-js-client": "^7.1.3"
